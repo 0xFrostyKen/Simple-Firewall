@@ -1,6 +1,10 @@
 import os
-from scapy.all import TCP
+from scapy.all import TCP, IP
 from log_alerts import log_event
+from time import time 
+from collections import defaultdict
+
+
 
 # Can be expanded into JSON later
 MALWARE_SIGNATURES = {
@@ -19,5 +23,49 @@ def is_malware_signature(packet, src_ip):
                 return True
     return False
 
-#test
+# SYNC Packet Detection 
+
+
+# initializing a threshold calculation value 
+
+syn_count = defaultdict(int) # creates a integer dictionary
+syn_timestamps = defaultdict(list) # creates a list dictionary
+
+SYN_THRESHOLD = 15 # the threshold for the ammount of syn packets to be eligible for logging
+TIME_WINDOW = 10  # in seconds, rate of time in which syn packets need to come 
+
+def detect_syn_scan(packet):
+    # checking to see if the is a tcp packet
+    if packet.haslayer(IP) and packet.haslayer(TCP):
+        ip_layer = packet[IP]
+        tcp_layer = packet[TCP]
+
+
+        # this checks if the packet has a S flag and then logs it
+        if tcp_layer.flag == "S":
+            src_ip = ip_layer.src
+            current_time = time()
+        
+
+            # cleaning timestamps that are older than the threshold 
+            filtered_timestamp = []
+            for t in syn_timestamps[src_ip]:
+                if current_time - t < TIME_WINDOW:
+                    filtered_timestamp.append(t)
+                    
+            filtered_timestamp.append(current_time)
+            syn_timestamps[src_ip] = filtered_timestamp
+            syn_count[src_ip] = len(syn_timestamps[src_ip])
+            
+            if syn_count[src_ip] > SYN_THRESHOLD:
+                from log_alerts import log_event
+                log_event(f"Potential SYN Scan {src_ip} ({syn_count[src_ip]} SYN scans within {TIME_WINDOW}s)")
+                print(f"SYN scan detected from {src_ip}")
+                return True
+    return False
+            
+    
+
+
+
 

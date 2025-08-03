@@ -44,3 +44,4 @@ def packet_callback(packet):
 print("Monitoring network traffic...")
 start_time[0] = time.time()
 sniff(filter="ip", prn=packet_callback)
+
