@@ -52,11 +52,14 @@ def detect_syn_scan(packet):
             for t in syn_timestamps[src_ip]:
                 if current_time - t < TIME_WINDOW:
                     filtered_timestamp.append(t)
-                    
+            # just adds the current time to filtered timestamp for future verification and then sends it to syn_timestamps[src_ip]
             filtered_timestamp.append(current_time)
             syn_timestamps[src_ip] = filtered_timestamp
+            
+            # counts the amount of syn messages
             syn_count[src_ip] = len(syn_timestamps[src_ip])
             
+            # logs the messages 
             if syn_count[src_ip] > SYN_THRESHOLD:
                 from log_alerts import log_event
                 log_event(f"Potential SYN Scan {src_ip} ({syn_count[src_ip]} SYN scans within {TIME_WINDOW}s)")
