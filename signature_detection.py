@@ -42,7 +42,8 @@ def detect_syn_scan(packet):
 
 
         # this checks if the packet has a S flag and then logs it
-        if tcp_layer.flag == "S":
+        # syn flag is 1 bit and its hex value is 0x02 so we are making sure we get syn flag 
+        if tcp_layer.flags & 0x02:
             src_ip = ip_layer.src
             current_time = time()
         

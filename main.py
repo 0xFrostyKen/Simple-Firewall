@@ -5,7 +5,7 @@ import time
 
 from log_alerts import log_event
 from sprayer_prevention import detect_spray_attack
-from signature_detection import is_malware_signature
+from signature_detection import is_malware_signature, detect_syn_scan
 from utils import read_ip_file
 
 THRESHOLD = 40
@@ -40,6 +40,9 @@ def packet_callback(packet):
         return
 
     detect_spray_attack(packet, src_ip, packet_count, start_time, blocked_ips, THRESHOLD)
+    # syn scan call
+    if detect_syn_scan(packet):
+        return
 
 print("Monitoring network traffic...")
 start_time[0] = time.time()
