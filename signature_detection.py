@@ -6,17 +6,22 @@ from collections import defaultdict
 
 
 
-# Can be expanded into JSON later
+# this signatures are not final its just there since sql and xss itself has a big attack surface, will be worked on in the future
 MALWARE_SIGNATURES = {
-    "Nimda": "GET /scripts/root.exe"
+    "Nimda": re.compile(r"GET /scripts/roots\.exe", re.IGNORECASE),
+    "SQL Injection": re.compile(r"(union select|select \* from)", re.IGNORECASE),
+    "XSS Attempt": re.compile(r"<script. *?>", re.IGNORECASE),
+    "Shellcode NOP sled": re.compile(r"(\x90{5,})"),
 }
+
 
 def is_malware_signature(packet, src_ip):
     if packet.haslayer(TCP) and packet[TCP].dport == 80:
-        payload = str(packet[TCP].payload)
+        raw_payload = bytes(packet[TCP].payload)
+        payload = raw_payload.decode('utf-8', errors='ignore').lower()
 
         for name, signature in MALWARE_SIGNATURES.items():
-            if signature in payload:
+            if signature.search(payload):
                 os.system(f"iptables -A INPUT -s {src_ip} -j DROP")
                 log_event(f"Blocking {name} signature from IP: {src_ip}")
                 print(f"Blocking {name} signature from IP: {src_ip}")
@@ -24,7 +29,6 @@ def is_malware_signature(packet, src_ip):
     return False
 
 # SYNC Packet Detection 
-
 
 # initializing a threshold calculation value 
 
@@ -68,8 +72,5 @@ def detect_syn_scan(packet):
                 return True
     return False
             
-    
-
-
 
 
